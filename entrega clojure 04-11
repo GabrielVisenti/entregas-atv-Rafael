@@ -1,0 +1,83 @@
+(ns integrador.core
+  (:gen-class))
+
+(defn cadastrar-alunos []
+  (println "\n--- Cadastro de Alunos ---")
+  (loop [alunos []]
+    (print "Nome do aluno (enter para sair): ")
+    (flush)
+    (let [nome (read-line)]
+      (if (empty? nome)
+        alunos
+        (do
+          (print "Nota do aluno: ")
+          (flush)
+          (let [nota (Double/parseDouble (read-line))
+                aluno {:nome nome :nota nota}]
+            (recur (conj alunos aluno))))))))
+
+(defn aprovado? [nota]
+  (>= nota 6))
+
+(defn relatorio-notas [alunos]
+  (println "\n--- Relatório de Notas ---")
+  (if (empty? alunos)
+    (println "Nenhum aluno cadastrado.")
+    (let [alunos-status (map #(assoc % :status (if (aprovado? (:nota %)) "Aprovado" "Reprovado")) alunos)
+          aprovados (filter #(= (:status %) "Aprovado") alunos-status)
+          media (/ (reduce + (map :nota alunos)) (count alunos))]
+      (println "\nLista completa de alunos:")
+      (doseq [a alunos-status]
+        (println a))
+      (println "\nApenas aprovados:")
+      (doseq [a aprovados]
+        (println a))
+      (println (format "\nMédia geral da turma: %.2f" media)))))
+
+(defn estatisticas [alunos]
+  (println "\n--- Estatísticas Gerais ---")
+  (if (empty? alunos)
+    (println "Nenhum aluno cadastrado.")
+    (let [qtde (count alunos)
+          aprovados (count (filter #(aprovado? (:nota %)) alunos))
+          reprovados (- qtde aprovados)
+          notas (map :nota alunos)
+          maior (apply max notas)
+          menor (apply min notas)
+          media (/ (reduce + notas) qtde)]
+      (println "Total de alunos:" qtde)
+      (println "Aprovados:" aprovados)
+      (println "Reprovados:" reprovados)
+      (println "Maior nota:" maior)
+      (println "Menor nota:" menor)
+      (println (format "Média geral: %.2f" media)))))
+
+;; Desafio extra - Buscar aluno
+(defn buscar-aluno [alunos]
+  (println "\n--- Buscar Aluno ---")
+  (print "Digite o nome: ")
+  (flush)
+  (let [nome (read-line)
+        aluno (first (filter #(= (:nome %) nome) alunos))]
+    (if aluno
+      (println "Aluno encontrado:" aluno)
+      (println "Aluno não encontrado."))))
+
+(defn -main []
+  (loop [alunos []]
+    (println "\n=== MENU PRINCIPAL ===")
+    (println "1 - Cadastrar Alunos")
+    (println "2 - Relatório de Notas")
+    (println "3 - Estatísticas Gerais")
+    (println "4 - Buscar Aluno (extra)")
+    (println "0 - Sair")
+    (print "Escolha uma opção: ")
+    (flush)
+    (let [op (read-line)]
+      (cond
+        (= op "1") (recur (cadastrar-alunos))
+        (= op "2") (do (relatorio-notas alunos) (recur alunos))
+        (= op "3") (do (estatisticas alunos) (recur alunos))
+        (= op "4") (do (buscar-aluno alunos) (recur alunos))
+        (= op "0") (println "Encerrando programa...")
+        :else (do (println "Opção inválida!") (recur alunos))))))
